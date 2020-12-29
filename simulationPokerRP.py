@@ -70,16 +70,8 @@ class Poker:
         alpha = self.players[2-player.number].alpha
         beta = self.players[2-player.number].beta
         a = self.players[2-player.number].a
-        if self.num_round == 2:
-            self.players[2-player.number].cut_off_points = {"bluff_raise": ((
-                1-a)*alpha**2)/2, "call": 1-(1-a)*beta, "raise": 1-(1-a)*alpha**2}
-        else:
-            self.players[2-player.number].cut_off_points["bluff_raise"] = player.cut_off_points["bluff_raise"]*alpha
-            self.players[2-player.number].cut_off_points["call"] = f(
-                player.cut_off_points["call"], alpha)
-            self.players[2-player.number].cut_off_points["raise"] = f(
-                player.cut_off_points["raise"], alpha)
-
+        self.players[2-player.number].cut_off_points = {"bluff_raise": ((
+            1-a)*alpha**self.num_round)/2, "call": 1-(1-a)*beta*alpha**(self.num_round-2), "raise": 1-(1-a)*alpha**self.num_round}
         if self.print_play:
             print(f"Joueur {player.number} raise")
 
@@ -111,7 +103,7 @@ class Poker:
             else:
                 self.bet(player)
                 oth_player.cut_off_points = {"bluff_raise": (
-                    1-oth_player.a)*oth_player.alpha/2, "call": b, "raise": 1-(1-oth_player.a)*oth_player.alpha}
+                    1-oth_player.a)*oth_player.alpha/2, "call": oth_player.b, "raise": 1-(1-oth_player.a)*oth_player.alpha}
 
         elif self.num_round == 2:
             if self.check:
@@ -191,13 +183,13 @@ if __name__ == "__main__":
     conservative_strat = {
         "a": 1, "b": b, "c": 1, "alpha": 0, "beta": beta}
     bluffer_strat = {
-        "a": 0, "b": 0, "c": 0, "alpha": 1, "beta": 1}
+        "a": 0, "b": 0, "c": 0, "alpha": 1, "beta": 0}
     J1 = Player(1, optimal_strat)
     J2 = Player(2, bluffer_strat)
     poker_game = Poker(J1, J2, nb_max_raise)
     # poker_game.play(True)
-    N = 100
+    N = 10**5
     for _ in range(N):
-        poker_game.play(True)
+        poker_game.play(False)
     print(f"Le gain moyen du Joueur 1 est : ", J1.bankroll/N)
     print(f"Le gain moyen du Joueur 2 est : ", J2.bankroll/N)
