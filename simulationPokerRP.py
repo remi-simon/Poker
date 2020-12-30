@@ -16,6 +16,7 @@ class Player:
         self.a = strategie["a"]
         self.b = strategie["b"]
         self.c = strategie["c"]
+        self.bet = 0
 
     def draw(self):
         self.hand = random.uniform(0, 1)
@@ -41,6 +42,8 @@ class Poker:
         self.players[0].cut_off_points = {
             "bluff": (1-self.players[0].a)/2, "bet": self.players[0].a}
         self.players[1].cut_off_points = {}
+        self.players[0].bet = 0
+        self.players[1].bet = 0
         self.isShowdown = False
         self.inBet = False
         self.inRaise = False
@@ -53,18 +56,21 @@ class Poker:
         for player in self.players:
             player.draw()
             player.bankroll -= 1
+            player.bet = 1
         self.pot += 2
 
     def bet(self, player):
         player.bankroll -= self.pot
-        self.pot *= 2
+        player.bet += self.pot
+        self.pot += self.pot
         self.inRaise = True
         if self.print_play:
             print(f"Joueur {player.number} mise ")
 
     def Raise(self, player):
         player.bankroll -= self.pot
-        self.pot *= 2
+        player.bet += self.pot
+        self.pot += self.pot
         self.nb_raise += 1
         self.inRaise = True
         alpha = self.players[2-player.number].alpha
@@ -82,8 +88,11 @@ class Poker:
             print(f"Joueur {player.number} se couche")
 
     def call(self, player):
-        player.bankroll -= self.pot/2
-        self.pot += self.pot/2
+        oth_player = self.players[2-player.number]
+        call_value = oth_player.bet-player.bet
+        player.bet += call_value
+        player.bankroll -= call_value
+        self.pot += call_value
         self.isShowdown = True
         if self.print_play:
             print(f"Joueur {player.number} suit, place au reveal")
@@ -144,10 +153,10 @@ class Poker:
             self.winner = 1
 
     def last_round(self, player):
-        if player.cut_off_points['bluff_raise'] <= player.hand and player.hand <= player.cut_off_points['call']:
-            self.fold(player)
-        else:
+        if player.hand >= player.cut_off_points["call"]:
             self.call(player)
+        else:
+            self.fold(player)
 
     def play(self, print_play=True):
         self.print_play = print_play
@@ -157,10 +166,11 @@ class Poker:
         if self.print_play:
             print("Joueur 1 a pour main : ", self.players[0].hand)
             print("Joueur 2 a pour main : ", self.players[1].hand)
-        while not self.isShowdown and not self.Fold and self.nb_raise <= self.nb_max_raise:
+        while not self.isShowdown and not self.Fold and self.nb_raise < self.nb_max_raise:
             self.round(self.players[num_player])
             num_player = (num_player+1) % 2
             self.num_round += 1
+
         if self.nb_raise == self.nb_max_raise:
             self.last_round(self.players[num_player])
         if self.isShowdown:
@@ -177,19 +187,23 @@ if __name__ == "__main__":
     beta = 0.477
     b = 0.514
     c = 0.694
-    nb_max_raise = 5
+    nb_max_raise = 4
     eps = 0
     optimal_strat = {"a": a, "b": b, "c": c, "alpha": alpha, "beta": beta}
     conservative_strat = {
         "a": 1, "b": b, "c": 1, "alpha": 0, "beta": beta}
     bluffer_strat = {
-        "a": 0, "b": 0, "c": 0, "alpha": 1, "beta": 0}
+        "a": 0, "b": 0, "c": 0, "alpha": 1, "beta": 1}
     J1 = Player(1, optimal_strat)
     J2 = Player(2, bluffer_strat)
     poker_game = Poker(J1, J2, nb_max_raise)
     # poker_game.play(True)
     N = 10**5
+    x, y = 0, 0
     for _ in range(N):
         poker_game.play(False)
+        x += J1.hand
+        y += J2.hand
+    print("x : ", x/N, "y : ", y/N)
     print(f"Le gain moyen du Joueur 1 est : ", J1.bankroll/N)
     print(f"Le gain moyen du Joueur 2 est : ", J2.bankroll/N)
