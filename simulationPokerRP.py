@@ -77,7 +77,7 @@ class Poker:
         beta = self.players[2-player.number].beta
         a = self.players[2-player.number].a
         self.players[2-player.number].cut_off_points = {"bluff_raise": ((
-            1-a)*alpha**self.num_round)/2, "call": 1-(1-a)*beta*alpha**(self.num_round-2), "raise": 1-(1-a)*alpha**self.num_round}
+            1-a)*alpha**self.num_round)/2, "call": f(a, beta*alpha**(self.num_round-2)), "raise": f(a, alpha**self.num_round)}
         if self.print_play:
             print(f"Joueur {player.number} raise")
 
@@ -189,21 +189,25 @@ if __name__ == "__main__":
     c = 0.694
     nb_max_raise = 4
     eps = 0
+
+    # la startégie optimale décrit par l'article
     optimal_strat = {"a": a, "b": b, "c": c, "alpha": alpha, "beta": beta}
     conservative_strat = {
-        "a": 1, "b": b, "c": 1, "alpha": 0, "beta": beta}
+        "a": 1, "b": b, "c": 1, "alpha": 0, "beta": 1}  # la stratégie conservatrice qui est bien dominée par la stratégie optimale
     bluffer_strat = {
-        "a": 0, "b": 0, "c": 0, "alpha": 1, "beta": 1}
-    J1 = Player(1, optimal_strat)
-    J2 = Player(2, bluffer_strat)
-    poker_game = Poker(J1, J2, nb_max_raise)
-    # poker_game.play(True)
+        "a": 0, "b": 0, "c": 0, "alpha": 1, "beta": 1}  # la stratégie super bluffer qui fait toujours raise le joueur, elle bat étonnement la startégie optimale
+    A = Player(1, optimal_strat)
+    B = Player(2, bluffer_strat)
+    print_round = True
+    poker_game = Poker(A, B, nb_max_raise)
+    # poker_game.play(print_round)
+
     N = 10**5
     x, y = 0, 0
     for _ in range(N):
         poker_game.play(False)
-        x += J1.hand
-        y += J2.hand
+        x += A.hand
+        y += B.hand
     print("x : ", x/N, "y : ", y/N)
-    print(f"Le gain moyen du Joueur 1 est : ", J1.bankroll/N)
-    print(f"Le gain moyen du Joueur 2 est : ", J2.bankroll/N)
+    print(f"Le gain moyen du Joueur A est : ", A.bankroll/N)
+    print(f"Le gain moyen du Joueur B est : ", B.bankroll/N)
