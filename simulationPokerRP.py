@@ -1,4 +1,6 @@
 import random
+import numpy
+from pylab import *
 
 
 def f(x, alpha):
@@ -19,7 +21,7 @@ class Player:
         self.bet = 0
 
     def draw(self):
-        self.hand = random.uniform(0, 1)
+        self.hand = numpy.random.uniform(0, 1)
 
 
 class Poker:
@@ -187,8 +189,7 @@ if __name__ == "__main__":
     beta = 0.477
     b = 0.514
     c = 0.694
-    nb_max_raise = 4
-    eps = 0
+    nb_max_raise = 1
 
     # la startégie optimale décrit par l'article
     optimal_strat = {"a": a, "b": b, "c": c, "alpha": alpha, "beta": beta}
@@ -196,18 +197,45 @@ if __name__ == "__main__":
         "a": 1, "b": b, "c": 1, "alpha": 0, "beta": 1}  # la stratégie conservatrice qui est bien dominée par la stratégie optimale
     bluffer_strat = {
         "a": 0, "b": 0, "c": 0, "alpha": 1, "beta": 1}  # la stratégie super bluffer qui fait toujours raise le joueur, elle bat étonnement la startégie optimale
+    call_strat = {"a": 1, "b": 0, "c": 1, "alpha": 0, "beta": 1}
+    test_strat = {"a": a, "b": b, "c": c, "alpha": alpha, "beta": beta}
     A = Player(1, optimal_strat)
     B = Player(2, bluffer_strat)
     print_round = True
     poker_game = Poker(A, B, nb_max_raise)
-    # poker_game.play(print_round)
-
-    N = 10**5
+    N = 10**5        # mettre N=10 pour tester en détail les parties
     x, y = 0, 0
     for _ in range(N):
-        poker_game.play(False)
+        poker_game.play(False)  # True pour print les étapes
         x += A.hand
         y += B.hand
+        #print("gain de A : ", A.bankroll)
+        #print("gain de B : ", B.bankroll)
     print("x : ", x/N, "y : ", y/N)
     print(f"Le gain moyen du Joueur A est : ", A.bankroll/N)
     print(f"Le gain moyen du Joueur B est : ", B.bankroll/N)
+
+
+# Test de stratégie au voisinage de la stratégie optimale de B
+    # A = Player(1, optimal_strat)
+    # N = 10**6
+    # Y = []
+    # ALPHA = numpy.linspace(0, 1, 21)
+    # EnsembleA = numpy.linspace(0, 1, 21)
+    # EPS = numpy.linspace(-0.1, 0.1, 41)
+    # print(EPS)
+    # for eps in EPS:
+    #     print(eps)
+    #     strat = {"a": a*(1+eps), "b": b*(1+eps), "c": c*(1+eps),
+    #              "alpha": alpha*(1-eps), "beta": beta*(1-eps)}
+    #     B = Player(2, strat)
+    #     poker = Poker(A, B, nb_max_raise)
+    #     for i in range(N):
+    #         poker.play(False)
+    #     Y.append(B.bankroll/N)
+    #     A.bankroll = 0
+    # title(r'Gain de B en fonction de (1+$\varepsilon$)OptimalStrat')
+    # ylabel('Gain de B')
+    # xlabel(r'$\varepsilon$')
+    # plot(EPS, Y, '.')
+    # show()
